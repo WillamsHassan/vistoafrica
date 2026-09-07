@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RegistrationStatus {
+  PENDING
+  PAYMENT_PENDING
+  PAYMENT_DECLARED
+  PAYMENT_VERIFIED
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  MTN
+  ORANGE
+}
+
+enum PaymentStatus {
+  PENDING
+  DECLARED
+  VERIFIED
+  REJECTED
+}
+
+model Admin {
+  id           String    @id @default(cuid())
+  fullName     String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("ADMIN")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  payments     Payment[] @relation("AdminPayments")
+  paymentActions PaymentAction[]
+}
+
+model Student {
+  id           String        @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String        @unique
+  phone        String?
+  city         String?
+  passwordHash String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  registrations Registration[]
+}
+
+model Course {
+  id               String        @id @default(cuid())
+  slug             String        @unique
+  name             String
+  category         String        @default("Général")
+  type             String        @default("Formation")
+  description      String
+  duration         String?
+  frequency        String?
+  sessionDuration  String?
+  price            Decimal       @db.Decimal(10, 2)
+  registrationFee  Decimal       @db.Decimal(10, 2)
+  hourlyRate       Decimal?      @db.Decimal(10, 2)
+  examIncluded     Boolean       @default(false)
+  manualIncluded   Boolean       @default(false)
+  preparationFees  Decimal?      @db.Decimal(10, 2)
+  installments     Json?
+  image            String?
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  registrations    Registration[]
+}
+
+model Registration {
+  id             String            @id @default(cuid())
+  accessToken    String?           @unique
+  studentId      String
+  courseId       String
+  status         RegistrationStatus @default(PAYMENT_PENDING)
+  amount         Decimal           @db.Decimal(10, 2)
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  student        Student           @relation(fields: [studentId], references: [id])
+  course         Course            @relation(fields: [courseId], references: [id])
+  payments       Payment[]
+  invoice        Invoice?
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  registrationId String
+  method       PaymentMethod
+  status       PaymentStatus @default(PENDING)
+  amount       Decimal       @db.Decimal(10, 2)
+  reference    String?
+  accountName  String?
+  proofUrl     String?
+  declaredAt   DateTime      @default(now())
+  verifiedAt   DateTime?
+  adminId      String?
+  reviewedAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  registration Registration @relation(fields: [registrationId], references: [id])
+  admin        Admin?       @relation("AdminPayments", fields: [adminId], references: [id])
+  actions      PaymentAction[]
+  invoice      Invoice?
+}
+
+model PaymentAction {
+  id        String   @id @default(cuid())
+  paymentId String
+  adminId   String
+  action    PaymentActionType
+  comment   String?
+  createdAt DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+  admin   Admin   @relation(fields: [adminId], references: [id])
+
+  @@index([paymentId, createdAt])
+}
+
+enum PaymentActionType {
+  VERIFIED
+  REJECTED
+}
+
+model Invoice {
+  id            String      @id @default(cuid())
+  registrationId String     @unique
+  paymentId     String      @unique
+  invoiceNumber  String      @unique
+  total          Decimal     @db.Decimal(10, 2)
+  storageKey     String      @unique
+  generatedAt    DateTime?
+  issuedAt       DateTime    @default(now())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  registration  Registration @relation(fields: [registrationId], references: [id])
+  payment       Payment      @relation(fields: [paymentId], references: [id])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  subject   String
+  message   String
+  isRead    Boolean  @default(false)
+  isArchived Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
