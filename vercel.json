@@ -1,4 +1,7 @@
 {
+  "installCommand": "npm --prefix vistoafrica install",
+  "buildCommand": "npm --prefix vistoafrica run build",
+  "outputDirectory": "vistoafrica/dist",
   "rewrites": [
     {
       "source": "/(.*)",

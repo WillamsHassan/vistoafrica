@@ -14,6 +14,7 @@ import {
   Users,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 
 const stats = [
   { value: '12k+', label: 'Apprenants' },
@@ -116,10 +117,10 @@ const HomePage = () => {
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
-              <button className="btn-primary gap-2">
+              <Link to="#formations" className="btn-primary gap-2">
                 Découvrir nos formations <ArrowRight className="h-4 w-4" />
-              </button>
-              <button className="btn-secondary">Nos services Visa</button>
+              </Link>
+              <Link to="/visa" className="btn-secondary">Nos services Visa</Link>
             </div>
 
             <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -191,7 +192,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="section-shell mt-20">
+      <section id="formations" className="section-shell mt-20 scroll-mt-28">
         <div className="mb-8">
           <span className="badge">Nos formations</span>
           <h2 className="mt-4 text-3xl font-bold text-brand-dark sm:text-4xl">Des cours pensés pour avancer sereinement</h2>
@@ -199,6 +200,7 @@ const HomePage = () => {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {formationCards.map(({ title, text, color, icon: Icon }) => (
+            <Link to={title === 'Italien' ? '/cours-italien' : '/cours-anglais'} key={title} className="block">
             <motion.article
               key={title}
               initial={{ opacity: 0, y: 12 }}
@@ -218,6 +220,7 @@ const HomePage = () => {
                 <ChevronRight className="h-4 w-4" />
               </div>
             </motion.article>
+            </Link>
           ))}
         </div>
       </section>
@@ -358,8 +361,8 @@ const HomePage = () => {
               <h2 className="mt-5 text-3xl font-bold sm:text-4xl">Votre prochaine étape commence ici.</h2>
             </div>
             <div className="flex flex-wrap gap-4">
-              <button className="btn-primary bg-white text-brand-green hover:bg-slate-100">S’inscrire</button>
-              <button className="btn-secondary border-white/40 bg-transparent text-white hover:border-white hover:bg-white/5">Nous contacter</button>
+              <Link to="/inscription" className="btn-primary bg-white text-brand-green hover:bg-slate-100">S’inscrire</Link>
+              <Link to="/contact" className="btn-secondary border-white/40 bg-transparent text-white hover:border-white hover:bg-white/5">Nous contacter</Link>
             </div>
           </div>
         </div>
