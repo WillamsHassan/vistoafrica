@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit'
 import { adminLogin, getAdminDashboard, getAdminMe } from '../controllers/adminController'
 import { createCourse, getCourses, setCourseActive, updateCourse } from '../controllers/courseController'
 import { createPayment, getAdminPayments, reviewPayment } from '../controllers/paymentController'
-import { downloadInvoicePdf } from '../controllers/invoiceController'
+import { downloadInvoicePdf, getAdminInvoices } from '../controllers/invoiceController'
 import { createRegistration } from '../controllers/registrationController'
 import { createContactMessage, deleteContactMessage, getContactMessages, updateContactMessage } from '../controllers/contactController'
 import { getSettings, updateSettings } from '../controllers/settingsController'
@@ -34,6 +34,7 @@ router.patch('/admin/messages/:id', protectAdmin, updateContactMessage)
 router.delete('/admin/messages/:id', protectAdmin, deleteContactMessage)
 router.get('/admin/payments', protectAdmin, getAdminPayments)
 router.post('/admin/payments/:id/review', protectAdmin, reviewPayment)
+router.get('/admin/invoices', protectAdmin, getAdminInvoices)
 router.get('/invoices/:id/pdf', protectAdmin, downloadInvoicePdf)
 router.get('/admin/students', protectAdmin, getStudents)
 router.get('/admin/students/:id', protectAdmin, getStudentById)

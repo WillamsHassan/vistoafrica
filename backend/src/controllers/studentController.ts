@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { prisma } from '../config/prisma'
 import { AppError } from '../utils/appError'
 import { asyncHandler } from '../utils/asyncHandler'
+import { readInvoicePdf } from '../services/invoiceService'
 import { validateBody } from '../utils/validate'
 
 const studentUpdateSchema = z.object({
@@ -117,13 +118,15 @@ export const downloadStudentInvoice = asyncHandler(async (req: Request, res: Res
 
   if (!invoice) throw new AppError('Facture introuvable.', 404)
 
-  res.setHeader('Content-Type', 'application/json; charset=utf-8')
-  res.setHeader('Content-Disposition', `attachment; filename="${invoice.invoiceNumber}.json"`)
-  res.json({
-    invoiceNumber: invoice.invoiceNumber,
-    issuedAt: invoice.issuedAt,
-    total: invoice.total,
-    student: `${invoice.registration.student.firstName} ${invoice.registration.student.lastName}`,
-    course: invoice.registration.course.name,
-  })
+  let pdf: Buffer
+  try {
+    pdf = await readInvoicePdf(invoice.storageKey)
+  } catch {
+    throw new AppError('Le fichier de facture est indisponible.', 404)
+  }
+
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `attachment; filename="${invoice.invoiceNumber}.pdf"`)
+  res.setHeader('Content-Length', pdf.length)
+  res.send(pdf)
 })

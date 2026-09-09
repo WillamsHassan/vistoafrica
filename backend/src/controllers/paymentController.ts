@@ -102,7 +102,7 @@ export const reviewPayment = asyncHandler(async (req: Request, res: Response) =>
   })
 
   if (nextStatus === 'VERIFIED') {
-    void finalizeVerifiedPayment(payment.registrationId)
+    await finalizeVerifiedPayment(payment.registrationId)
   }
   if (nextStatus === 'REJECTED') {
     void notifyRejectedPayment(payment, payload.comment)

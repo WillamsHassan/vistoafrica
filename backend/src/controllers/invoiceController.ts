@@ -7,6 +7,18 @@ import { readInvoicePdf } from '../services/invoiceService'
 
 const getId = (req: Request) => (Array.isArray(req.params.id) ? req.params.id[0] : req.params.id)
 
+export const getAdminInvoices = asyncHandler(async (_req: Request, res: Response) => {
+  const invoices = await prisma.invoice.findMany({
+    orderBy: { issuedAt: 'desc' },
+    include: {
+      registration: { include: { student: true, course: true } },
+      payment: true,
+    },
+  })
+
+  res.json({ success: true, data: invoices })
+})
+
 export const downloadInvoicePdf = asyncHandler(async (req: Request, res: Response) => {
   const invoice = await prisma.invoice.findUnique({ where: { id: getId(req) } })
   if (!invoice) throw new AppError('Facture introuvable.', 404)
