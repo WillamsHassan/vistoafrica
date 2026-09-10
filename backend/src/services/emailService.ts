@@ -429,7 +429,7 @@ class EmailService {
   ) {
     const content = (await readFile(storagePath)).toString('base64')
 
-    await this.sendSafely({
+    await this.send({
       to: data.email,
 
       subject:

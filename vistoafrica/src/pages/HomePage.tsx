@@ -117,9 +117,9 @@ const HomePage = () => {
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
-              <a href="#formations" className="btn-primary gap-2">
+              <button type="button" onClick={() => document.getElementById('formations')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="btn-primary gap-2">
                 Découvrir nos formations <ArrowRight className="h-4 w-4" />
-              </a>
+              </button>
               <Link to="/visa" className="btn-secondary">Nos services Visa</Link>
             </div>
 

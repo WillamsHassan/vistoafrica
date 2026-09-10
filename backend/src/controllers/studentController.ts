@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { prisma } from '../config/prisma'
 import { AppError } from '../utils/appError'
 import { asyncHandler } from '../utils/asyncHandler'
-import { readInvoicePdf } from '../services/invoiceService'
+import { generateInvoicePdf, readInvoicePdf } from '../services/invoiceService'
 import { validateBody } from '../utils/validate'
 
 const studentUpdateSchema = z.object({
@@ -113,7 +113,7 @@ export const downloadStudentInvoice = asyncHandler(async (req: Request, res: Res
       id: invoiceId,
       registration: { studentId: getId(req) },
     },
-    include: { registration: { include: { student: true, course: true } } },
+    include: { registration: { include: { student: true, course: true } }, payment: true },
   })
 
   if (!invoice) throw new AppError('Facture introuvable.', 404)
@@ -122,7 +122,8 @@ export const downloadStudentInvoice = asyncHandler(async (req: Request, res: Res
   try {
     pdf = await readInvoicePdf(invoice.storageKey)
   } catch {
-    throw new AppError('Le fichier de facture est indisponible.', 404)
+    await generateInvoicePdf({ invoiceNumber: invoice.invoiceNumber, registrationNumber: invoice.registration.id, firstName: invoice.registration.student.firstName, lastName: invoice.registration.student.lastName, phone: invoice.registration.student.phone, email: invoice.registration.student.email, courseName: invoice.registration.course.name, amount: invoice.total.toString(), paymentMethod: invoice.payment.method, paymentDate: invoice.payment.reviewedAt ?? invoice.issuedAt, paymentStatus: invoice.payment.status, paymentReference: invoice.payment.reference }, invoice.storageKey)
+    pdf = await readInvoicePdf(invoice.storageKey)
   }
 
   res.setHeader('Content-Type', 'application/pdf')
