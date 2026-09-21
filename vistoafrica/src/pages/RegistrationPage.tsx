@@ -1,10 +1,11 @@
 import { CheckCircle2, ChevronLeft, ChevronRight, CreditCard, Mail, MapPin, Phone, User } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import FormField from '../components/FormField'
 import { useCourses } from '../hooks/useCourses'
 import type { Course } from '../types/course'
+import { trackEvent } from '../services/analytics'
 
 const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
 
@@ -42,6 +43,8 @@ const RegistrationPage = () => {
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => { trackEvent('REGISTRATION_STARTED', '/inscription') }, [])
 
   const validateField = (name: keyof FormValues, value: string) => {
     switch (name) {
@@ -148,6 +151,7 @@ const RegistrationPage = () => {
     }
 
       sessionStorage.setItem('vistoafrica-registration-summary', JSON.stringify({ ...summary, registrationId: result.data.id, accessToken: result.data.accessToken, total: `${Number(result.data.amount).toLocaleString('fr-FR')} XAF` }))
+      trackEvent('REGISTRATION_COMPLETED', '/inscription')
       navigate('/inscription/recapitulatif')
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Impossible d’enregistrer votre inscription.')

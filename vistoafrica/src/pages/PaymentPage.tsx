@@ -2,6 +2,7 @@ import { AlertTriangle, ArrowRight, Banknote, Clock3, WalletCards } from 'lucide
 import { useEffect, useMemo, useState } from 'react'
 
 import { useSiteSettings } from '../hooks/useSiteSettings'
+import { trackEvent } from '../services/analytics'
 
 type PaymentStatus = 'PAYMENT_PENDING' | 'PAYMENT_DECLARED'
 
@@ -22,6 +23,8 @@ const PaymentPage = () => {
   const [reference, setReference] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => { trackEvent('PAYMENT_STARTED', '/inscription/paiement') }, [])
 
   useEffect(() => {
     const raw = sessionStorage.getItem('vistoafrica-registration-summary')
@@ -70,6 +73,7 @@ const PaymentPage = () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:5000'}/api/payments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ registrationId: summary.registrationId, accessToken: summary.accessToken, method, reference: reference.trim() || undefined }) })
       const result = (await response.json()) as { message?: string }
       if (!response.ok) throw new Error(result.message ?? 'Impossible de déclarer le paiement.')
+      trackEvent('PAYMENT_DECLARED', '/inscription/paiement')
       setPaymentStatus('PAYMENT_DECLARED')
     } catch (submitError) { setError(submitError instanceof Error ? submitError.message : 'Impossible de déclarer le paiement.') } finally { setIsSubmitting(false) }
   }

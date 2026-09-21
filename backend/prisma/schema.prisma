@@ -171,3 +171,65 @@ model SiteSetting {
   updatedAt   DateTime @updatedAt
   createdAt   DateTime @default(now())
 }
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  COURSE_VIEW
+  REGISTRATION_STARTED
+  REGISTRATION_COMPLETED
+  PAYMENT_STARTED
+  PAYMENT_DECLARED
+}
+
+model VisitorSession {
+  id              String           @id @default(cuid())
+  visitorId       String           @unique
+  firstSeenAt     DateTime         @default(now())
+  lastSeenAt      DateTime         @default(now())
+  duration        Int              @default(0)
+  pageViews       Int              @default(0)
+  entryPage       String
+  lastPage        String
+  referrer        String?
+  deviceType      String?
+  browser         String?
+  operatingSystem String?
+  language        String?
+  resolution      String?
+  country         String?
+  city            String?
+  isRegistered    Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  pageViewRecords PageView[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@index([lastSeenAt])
+  @@index([createdAt])
+}
+
+model PageView {
+  id               String         @id @default(cuid())
+  visitorSessionId String
+  path             String
+  title            String?
+  timestamp        DateTime       @default(now())
+  duration         Int            @default(0)
+  visitorSession   VisitorSession @relation(fields: [visitorSessionId], references: [id], onDelete: Cascade)
+
+  @@index([visitorSessionId, timestamp])
+  @@index([path, timestamp])
+}
+
+model AnalyticsEvent {
+  id               String            @id @default(cuid())
+  visitorSessionId String
+  type             AnalyticsEventType
+  path             String
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+  visitorSession   VisitorSession    @relation(fields: [visitorSessionId], references: [id], onDelete: Cascade)
+
+  @@index([visitorSessionId, createdAt])
+  @@index([type, createdAt])
+}

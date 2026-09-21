@@ -16,6 +16,7 @@ import AdminLoginPage from '../pages/admin/AdminLoginPage'
 import AdminMessagesPage from '../pages/admin/AdminMessagesPage'
 import AdminPaiementsPage from '../pages/admin/AdminPaiementsPage'
 import AdminParametresPage from '../pages/admin/AdminParametresPage'
+import AdminVisiteursPage from '../pages/admin/AdminVisiteursPage'
 import ContactPage from '../pages/ContactPage'
 import CoursAnglaisPage from '../pages/CoursAnglaisPage'
 import CoursItalienPage from '../pages/CoursItalienPage'
@@ -62,6 +63,8 @@ const AppRoutes = () => {
         <Route path="/admin/factures" element={<AdminFacturesPage />} />
         <Route path="/admin/messages" element={<AdminMessagesPage />} />
         <Route path="/admin/parametres" element={<AdminParametresPage />} />
+        <Route path="/admin/visiteurs" element={<AdminVisiteursPage />} />
+        <Route path="/admin/visiteurs/:id" element={<AdminVisiteursPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -11,9 +11,19 @@ import { getSettings, updateSettings } from '../controllers/settingsController'
 import { changeAdminRegistrationStatus, downloadAdminRegistrationPdf, getAdminRegistrationById, getAdminRegistrations, updateAdminRegistration } from '../controllers/adminRegistrationController'
 import { downloadStudentInvoice, getStudentById, getStudents, updateStudent } from '../controllers/studentController'
 import { protectAdmin } from '../middlewares/auth'
+import { createAnalyticsEvent, createAnalyticsPageView, createAnalyticsSession, deleteAnalyticsVisitor, getAnalyticsOverview, getAnalyticsVisitor, getAnalyticsVisitors } from '../controllers/analyticsController'
 
 const router = Router()
 const publicWriteLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false, message: { success: false, message: 'Trop de requêtes. Réessayez plus tard.' } })
+const analyticsLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 120, standardHeaders: 'draft-7', legacyHeaders: false, message: { success: false, message: 'Trop de requêtes analytics. Réessayez plus tard.' } })
+
+router.post('/analytics/session', analyticsLimiter, createAnalyticsSession)
+router.post('/analytics/page-view', analyticsLimiter, createAnalyticsPageView)
+router.post('/analytics/event', analyticsLimiter, createAnalyticsEvent)
+router.get('/admin/analytics/overview', protectAdmin, getAnalyticsOverview)
+router.get('/admin/analytics/visitors', protectAdmin, getAnalyticsVisitors)
+router.get('/admin/analytics/visitors/:id', protectAdmin, getAnalyticsVisitor)
+router.delete('/admin/analytics/visitors/:id', protectAdmin, deleteAnalyticsVisitor)
 
 router.get('/courses', getCourses)
 router.get('/admin/courses', protectAdmin, getCourses)

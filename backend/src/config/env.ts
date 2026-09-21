@@ -36,6 +36,7 @@ export const env = {
   // Serveur
   port: Number(process.env.PORT ?? 5000),
   pdfStoragePath: process.env.PDF_STORAGE_PATH ?? 'storage/invoices',
+  analyticsRetentionDays: Math.max(Number(process.env.ANALYTICS_RETENTION_DAYS ?? 90) || 90, 1),
 
   // Base de données
   databaseUrl:
