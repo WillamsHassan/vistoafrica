@@ -18,7 +18,7 @@ if (nodeEnv === 'production' && jwtSecret.length < 32) {
 }
 
 if (nodeEnv === 'production' && !mongoUri) {
-  throw new Error('MONGODB_URI doit être défini en production.')
+  throw new Error('Configuration manquante : définissez MONGODB_URI dans les variables d’environnement du service (Render → Environment). DATABASE_URL PostgreSQL ne remplace pas MONGODB_URI.')
 }
 
 if (nodeEnv === 'production' && !process.env.EMAIL_USER) {
