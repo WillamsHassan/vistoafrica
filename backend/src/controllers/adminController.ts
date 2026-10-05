@@ -98,13 +98,13 @@ export const getAdminDashboard = asyncHandler(async (_req: Request, res: Respons
     monthlyRegistrations,
     monthlyPayments,
   ] = await Promise.all([
-    prisma.student.count(),
+    prisma.student.count({ where: { deletedAt: null } }),
     prisma.registration.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-    prisma.payment.count({ where: { status: 'PENDING' } }),
-    prisma.payment.count({ where: { status: 'DECLARED' } }),
-    prisma.payment.count({ where: { status: 'VERIFIED' } }),
+    prisma.payment.count({ where: { status: 'PENDING', archivedAt: null } }),
+    prisma.payment.count({ where: { status: 'DECLARED', archivedAt: null } }),
+    prisma.payment.count({ where: { status: 'VERIFIED', archivedAt: null } }),
     prisma.registration.count({ where: { status: 'CONFIRMED' } }),
-    prisma.payment.aggregate({ _sum: { amount: true }, where: { status: 'VERIFIED' } }),
+    prisma.payment.aggregate({ _sum: { amount: true }, where: { status: 'VERIFIED', archivedAt: null } }),
     prisma.registration.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
@@ -112,12 +112,13 @@ export const getAdminDashboard = asyncHandler(async (_req: Request, res: Respons
     }),
     prisma.payment.findMany({
       take: 5,
+      where: { archivedAt: null },
       orderBy: { createdAt: 'desc' },
       include: { registration: { include: { student: true } } },
     }),
     prisma.payment.findMany({
       take: 5,
-      where: { status: 'DECLARED' },
+      where: { status: 'DECLARED', archivedAt: null },
       orderBy: { declaredAt: 'asc' },
       include: { registration: { include: { student: true } } },
     }),
@@ -126,7 +127,7 @@ export const getAdminDashboard = asyncHandler(async (_req: Request, res: Respons
       select: { createdAt: true },
     }),
     prisma.payment.findMany({
-      where: { createdAt: { gte: sixMonthsAgo }, status: 'VERIFIED' },
+      where: { createdAt: { gte: sixMonthsAgo }, status: 'VERIFIED', archivedAt: null },
       select: { createdAt: true, amount: true },
     }),
   ])

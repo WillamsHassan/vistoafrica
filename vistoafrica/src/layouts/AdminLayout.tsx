@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Bell, BriefcaseBusiness, FileText, GraduationCap, LayoutDashboard, Menu, MessageSquareText, Settings, Users, X, LogOut, BarChart3 } from 'lucide-react'
+import { Bell, BriefcaseBusiness, FileText, GraduationCap, LayoutDashboard, Menu, MessageSquareText, Settings, Users, X, LogOut, BarChart3, Trash2 } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 
@@ -13,7 +13,9 @@ const navItems = [
   { to: '/admin/formations', label: 'Formations', icon: BriefcaseBusiness },
   { to: '/admin/factures', label: 'Factures', icon: FileText },
   { to: '/admin/messages', label: 'Messages', icon: MessageSquareText },
-  { to: '/admin/visiteurs', label: 'Analytics', icon: BarChart3 },
+  { to: '/admin/corbeille', label: 'Corbeille / Audit', icon: Trash2 },
+  { to: '/admin/visiteurs#overview', label: 'Analytics · Vue générale', icon: BarChart3 },
+  { to: '/admin/visiteurs#visitors', label: 'Analytics · Visiteurs', icon: Users },
   { to: '/admin/parametres', label: 'Paramètres', icon: Settings },
 ]
 

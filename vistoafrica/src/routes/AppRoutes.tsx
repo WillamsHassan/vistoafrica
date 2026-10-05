@@ -6,6 +6,7 @@ import AdminLayout from '../layouts/AdminLayout'
 import PublicLayout from '../layouts/PublicLayout'
 import AboutPage from '../pages/AboutPage'
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage'
+import AdminCorbeillePage from '../pages/admin/AdminCorbeillePage'
 import AdminEtudiantsPage from '../pages/admin/AdminEtudiantsPage'
 import AdminEtudiantDetailPage from '../pages/admin/AdminEtudiantDetailPage'
 import AdminFacturesPage from '../pages/admin/AdminFacturesPage'
@@ -62,6 +63,7 @@ const AppRoutes = () => {
         <Route path="/admin/formations" element={<AdminFormationsPage />} />
         <Route path="/admin/factures" element={<AdminFacturesPage />} />
         <Route path="/admin/messages" element={<AdminMessagesPage />} />
+        <Route path="/admin/corbeille" element={<AdminCorbeillePage />} />
         <Route path="/admin/parametres" element={<AdminParametresPage />} />
         <Route path="/admin/visiteurs" element={<AdminVisiteursPage />} />
         <Route path="/admin/visiteurs/:id" element={<AdminVisiteursPage />} />

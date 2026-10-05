@@ -26,6 +26,7 @@ export const getStudents = asyncHandler(async (req: Request, res: Response) => {
   const status = typeof req.query.status === 'string' ? req.query.status : ''
 
   const where = {
+    deletedAt: null,
     ...(search
       ? {
           OR: [
@@ -77,7 +78,7 @@ export const getStudents = asyncHandler(async (req: Request, res: Response) => {
 
 export const getStudentById = asyncHandler(async (req: Request, res: Response) => {
   const student = await prisma.student.findUnique({
-    where: { id: getId(req) },
+    where: { id: getId(req), deletedAt: null },
     include: {
       registrations: {
         orderBy: { createdAt: 'desc' },

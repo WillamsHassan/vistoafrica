@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
-import { getAnalyticsConsent, setAnalyticsConsent } from '../services/analytics'
+import { getAnalyticsConsent, getAnalyticsConsentRecord, setAnalyticsConsent } from '../services/analytics'
 
 type CookieConsentProps = { onChange: (accepted: boolean) => void }
 
 const CookieConsent = ({ onChange }: CookieConsentProps) => {
-  const [visible, setVisible] = useState(!localStorage.getItem('vistoafrica-analytics-consent'))
+  const [visible, setVisible] = useState(getAnalyticsConsentRecord() === null)
 
   if (!visible || getAnalyticsConsent()) return null
 

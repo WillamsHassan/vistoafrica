@@ -26,7 +26,7 @@ app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'))
 
 app.get('/health', async (_req, res) => {
   try {
-    await prisma.$queryRaw`SELECT 1`
+    await prisma.visitorSession.count()
     res.json({ success: true, status: 'ok', database: 'ok' })
   } catch (error) {
     console.error('[Health] Base de données indisponible:', error)

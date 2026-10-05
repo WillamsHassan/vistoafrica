@@ -21,41 +21,34 @@ const registrationSchema = z.object({
 export const createRegistration = asyncHandler(async (req: Request, res: Response) => {
   const payload = validateBody(registrationSchema, req.body)
 
-  const course = await prisma.course.findFirst({ where: { OR: [{ id: payload.courseId }, { slug: payload.courseId }] } })
-  if (!course) {
-    throw new AppError('Formation introuvable.', 404)
-  }
+  const registration = await prisma.$transaction(async (transaction) => {
+    const course = await transaction.course.findFirst({ where: { isActive: true, archivedAt: null, OR: [{ id: payload.courseId }, { slug: payload.courseId }] } })
+    if (!course) throw new AppError('Formation introuvable.', 404)
 
-  const student = await prisma.student.upsert({
-    where: { email: payload.email },
-    update: {
-      firstName: payload.firstName,
-      lastName: payload.lastName,
-      phone: payload.phone || null,
-      city: payload.city || null,
-    },
-    create: {
-      firstName: payload.firstName,
-      lastName: payload.lastName,
-      email: payload.email,
-      phone: payload.phone || null,
-      city: payload.city || null,
-    },
-  })
+    const existingStudent = await transaction.student.findUnique({ where: { email: payload.email }, select: { id: true, deletedAt: true } })
+    if (existingStudent?.deletedAt) throw new AppError('Ce dossier étudiant est archivé. Contactez l’administration pour le restaurer avant une nouvelle inscription.', 409)
 
-  const registration = await prisma.registration.create({
-    data: {
-      studentId: student.id,
-      courseId: course.id,
-      accessToken: randomBytes(32).toString('hex'),
-      amount: course.price.add(course.registrationFee),
-      status: 'PAYMENT_PENDING',
-      notes: payload.notes ?? null,
-    },
-    include: {
-      student: true,
-      course: true,
-    },
+    const student = await transaction.student.upsert({
+      where: { email: payload.email },
+      update: { firstName: payload.firstName, lastName: payload.lastName, phone: payload.phone || null, city: payload.city || null },
+      create: { firstName: payload.firstName, lastName: payload.lastName, email: payload.email, phone: payload.phone || null, city: payload.city || null },
+    })
+
+    // These writes serialize new links against the guarded deletion paths below.
+    await transaction.student.update({ where: { id: student.id }, data: { relationGuard: { increment: 1 } } })
+    await transaction.course.update({ where: { id: course.id }, data: { relationGuard: { increment: 1 } } })
+
+    return transaction.registration.create({
+      data: {
+        studentId: student.id,
+        courseId: course.id,
+        accessToken: randomBytes(32).toString('hex'),
+        amount: Number(course.price) + Number(course.registrationFee),
+        status: 'PAYMENT_PENDING',
+        notes: payload.notes ?? null,
+      },
+      include: { student: true, course: true },
+    })
   })
 
   const emailData = { firstName: registration.student.firstName, lastName: registration.student.lastName, email: registration.student.email, phone: registration.student.phone, courseName: registration.course.name, amount: registration.amount.toString(), registrationId: registration.id }

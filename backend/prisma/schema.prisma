@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
 }
 
 enum RegistrationStatus {
@@ -29,147 +29,9 @@ enum PaymentStatus {
   REJECTED
 }
 
-model Admin {
-  id           String    @id @default(cuid())
-  fullName     String
-  email        String    @unique
-  passwordHash String
-  role         String    @default("ADMIN")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  payments     Payment[] @relation("AdminPayments")
-  paymentActions PaymentAction[]
-}
-
-model Student {
-  id           String        @id @default(cuid())
-  firstName    String
-  lastName     String
-  email        String        @unique
-  phone        String?
-  city         String?
-  passwordHash String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  registrations Registration[]
-}
-
-model Course {
-  id               String        @id @default(cuid())
-  slug             String        @unique
-  name             String
-  category         String        @default("Général")
-  type             String        @default("Formation")
-  description      String
-  duration         String?
-  frequency        String?
-  sessionDuration  String?
-  price            Decimal       @db.Decimal(10, 2)
-  registrationFee  Decimal       @db.Decimal(10, 2)
-  hourlyRate       Decimal?      @db.Decimal(10, 2)
-  examIncluded     Boolean       @default(false)
-  manualIncluded   Boolean       @default(false)
-  preparationFees  Decimal?      @db.Decimal(10, 2)
-  installments     Json?
-  image            String?
-  isActive         Boolean       @default(true)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  registrations    Registration[]
-}
-
-model Registration {
-  id             String            @id @default(cuid())
-  accessToken    String?           @unique
-  studentId      String
-  courseId       String
-  status         RegistrationStatus @default(PAYMENT_PENDING)
-  amount         Decimal           @db.Decimal(10, 2)
-  notes          String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  student        Student           @relation(fields: [studentId], references: [id])
-  course         Course            @relation(fields: [courseId], references: [id])
-  payments       Payment[]
-  invoice        Invoice?
-}
-
-model Payment {
-  id           String        @id @default(cuid())
-  registrationId String
-  method       PaymentMethod
-  status       PaymentStatus @default(PENDING)
-  amount       Decimal       @db.Decimal(10, 2)
-  reference    String?
-  accountName  String?
-  proofUrl     String?
-  declaredAt   DateTime      @default(now())
-  verifiedAt   DateTime?
-  adminId      String?
-  reviewedAt   DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  registration Registration @relation(fields: [registrationId], references: [id])
-  admin        Admin?       @relation("AdminPayments", fields: [adminId], references: [id])
-  actions      PaymentAction[]
-  invoice      Invoice?
-}
-
-model PaymentAction {
-  id        String   @id @default(cuid())
-  paymentId String
-  adminId   String
-  action    PaymentActionType
-  comment   String?
-  createdAt DateTime @default(now())
-
-  payment Payment @relation(fields: [paymentId], references: [id])
-  admin   Admin   @relation(fields: [adminId], references: [id])
-
-  @@index([paymentId, createdAt])
-}
-
 enum PaymentActionType {
   VERIFIED
   REJECTED
-}
-
-model Invoice {
-  id            String      @id @default(cuid())
-  registrationId String     @unique
-  paymentId     String      @unique
-  invoiceNumber  String      @unique
-  total          Decimal     @db.Decimal(10, 2)
-  storageKey     String      @unique
-  generatedAt    DateTime?
-  issuedAt       DateTime    @default(now())
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  registration  Registration @relation(fields: [registrationId], references: [id])
-  payment       Payment      @relation(fields: [paymentId], references: [id])
-}
-
-model ContactMessage {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  phone     String
-  subject   String
-  message   String
-  isRead    Boolean  @default(false)
-  isArchived Boolean @default(false)
-  createdAt DateTime @default(now())
-}
-
-model SiteSetting {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       String
-  description String?
-  updatedAt   DateTime @updatedAt
-  createdAt   DateTime @default(now())
 }
 
 enum AnalyticsEventType {
@@ -181,8 +43,170 @@ enum AnalyticsEventType {
   PAYMENT_DECLARED
 }
 
+model Admin {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId      String?        @unique
+  fullName      String
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("ADMIN")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  payments      Payment[]      @relation("AdminPayments")
+  paymentActions PaymentAction[]
+  auditLogs     AdminAuditLog[]
+}
+
+model Student {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId      String?       @unique
+  firstName     String
+  lastName      String
+  email         String        @unique
+  phone         String?
+  city          String?
+  passwordHash  String?
+  deletedAt     DateTime?
+  archivedEmail String?
+  relationGuard Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  registrations Registration[]
+}
+
+model Course {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId        String?       @unique
+  slug            String        @unique
+  name            String
+  category        String        @default("Général")
+  type            String        @default("Formation")
+  description     String
+  duration        String?
+  frequency       String?
+  sessionDuration String?
+  price           Float
+  registrationFee Float
+  hourlyRate      Float?
+  examIncluded    Boolean       @default(false)
+  manualIncluded  Boolean       @default(false)
+  preparationFees Float?
+  installments    Json?
+  image           String?
+  isActive        Boolean       @default(true)
+  archivedAt      DateTime?
+  archivedWasActive Boolean?
+  relationGuard   Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  registrations   Registration[]
+}
+
+model Registration {
+  id             String            @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId       String?           @unique
+  legacyStudentId String?
+  legacyCourseId  String?
+  accessToken    String?           @unique
+  studentId      String            @db.ObjectId
+  courseId       String            @db.ObjectId
+  status         RegistrationStatus @default(PAYMENT_PENDING)
+  amount         Float
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  student        Student           @relation(fields: [studentId], references: [id])
+  course         Course            @relation(fields: [courseId], references: [id])
+  payments       Payment[]
+  invoice        Invoice?
+}
+
+model Payment {
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId          String?       @unique
+  legacyRegistrationId String?
+  legacyAdminId     String?
+  registrationId    String        @db.ObjectId
+  method            PaymentMethod
+  status            PaymentStatus @default(PENDING)
+  archivedAt        DateTime?
+  amount            Float
+  reference         String?
+  accountName       String?
+  proofUrl          String?
+  declaredAt        DateTime      @default(now())
+  verifiedAt        DateTime?
+  adminId           String?       @db.ObjectId
+  reviewedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  registration      Registration @relation(fields: [registrationId], references: [id])
+  admin             Admin?       @relation("AdminPayments", fields: [adminId], references: [id])
+  actions           PaymentAction[]
+  invoice           Invoice?
+}
+
+model PaymentAction {
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId  String?           @unique
+  paymentId String            @db.ObjectId
+  adminId   String            @db.ObjectId
+  action    PaymentActionType
+  comment   String?
+  createdAt DateTime          @default(now())
+
+  payment   Payment @relation(fields: [paymentId], references: [id])
+  admin     Admin   @relation(fields: [adminId], references: [id])
+
+  @@index([paymentId, createdAt])
+}
+
+model Invoice {
+  id                 String      @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId           String?     @unique
+  legacyRegistrationId String?
+  legacyPaymentId     String?
+  registrationId     String      @db.ObjectId @unique
+  paymentId          String      @db.ObjectId @unique
+  invoiceNumber      String      @unique
+  total              Float
+  storageKey         String      @unique
+  generatedAt        DateTime?
+  issuedAt           DateTime    @default(now())
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  registration       Registration @relation(fields: [registrationId], references: [id])
+  payment            Payment      @relation(fields: [paymentId], references: [id])
+}
+
+model ContactMessage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId  String?  @unique
+  name      String
+  email     String
+  phone     String
+  subject   String
+  message   String
+  isRead    Boolean  @default(false)
+  isArchived Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+model SiteSetting {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId    String?  @unique
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
 model VisitorSession {
-  id              String           @id @default(cuid())
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId        String?          @unique
   visitorId       String           @unique
   firstSeenAt     DateTime         @default(now())
   lastSeenAt      DateTime         @default(now())
@@ -209,8 +233,9 @@ model VisitorSession {
 }
 
 model PageView {
-  id               String         @id @default(cuid())
-  visitorSessionId String
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId         String?        @unique
+  visitorSessionId String         @db.ObjectId
   path             String
   title            String?
   timestamp        DateTime       @default(now())
@@ -222,8 +247,9 @@ model PageView {
 }
 
 model AnalyticsEvent {
-  id               String            @id @default(cuid())
-  visitorSessionId String
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  legacyId         String?           @unique
+  visitorSessionId String            @db.ObjectId
   type             AnalyticsEventType
   path             String
   metadata         Json?
@@ -232,4 +258,18 @@ model AnalyticsEvent {
 
   @@index([visitorSessionId, createdAt])
   @@index([type, createdAt])
+}
+
+model AdminAuditLog {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  adminId     String   @db.ObjectId
+  action      String
+  entityType  String
+  entityId    String
+  description String?
+  createdAt   DateTime @default(now())
+  admin       Admin    @relation(fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt])
+  @@index([entityType, entityId, createdAt])
 }

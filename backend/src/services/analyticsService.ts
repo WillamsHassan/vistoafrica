@@ -2,12 +2,23 @@ import { prisma } from '../config/prisma'
 import { env } from '../config/env'
 
 let lastPurgeAt = 0
+let purgeInProgress: Promise<void> | null = null
 
 export const purgeOldAnalytics = async () => {
   if (Date.now() - lastPurgeAt < 60 * 60 * 1000) return
-  lastPurgeAt = Date.now()
+  if (purgeInProgress) return purgeInProgress
   const cutoff = new Date(Date.now() - env.analyticsRetentionDays * 24 * 60 * 60 * 1000)
-  await prisma.visitorSession.deleteMany({ where: { lastSeenAt: { lt: cutoff } } })
+  purgeInProgress = prisma.visitorSession.deleteMany({ where: { lastSeenAt: { lt: cutoff } } })
+    .then(() => { lastPurgeAt = Date.now() })
+    .finally(() => { purgeInProgress = null })
+  await purgeInProgress
+}
+
+export const scheduleAnalyticsPurge = () => {
+  const run = () => { void purgeOldAnalytics().catch((error) => console.error('[Analytics] Purge automatique échouée:', error)) }
+  run()
+  const timer = setInterval(run, 60 * 60 * 1000)
+  timer.unref()
 }
 
 export const analyticsStatus = (types: string[]) => {

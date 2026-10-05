@@ -63,7 +63,7 @@ export const createPayment = asyncHandler(async (req: Request, res: Response) =>
 })
 
 export const getAdminPayments = asyncHandler(async (_req: Request, res: Response) => {
-  const payments = await prisma.payment.findMany({ orderBy: { createdAt: 'desc' }, include: paymentInclude })
+  const payments = await prisma.payment.findMany({ where: { archivedAt: null }, orderBy: { createdAt: 'desc' }, include: paymentInclude })
   res.json({ success: true, data: payments })
 })
 
@@ -72,6 +72,7 @@ export const reviewPayment = asyncHandler(async (req: Request, res: Response) =>
   const payload = validateBody(paymentActionSchema, req.body)
   const payment = await prisma.payment.findUnique({ where: { id: getId(req) } })
   if (!payment) throw new AppError('Paiement introuvable.', 404)
+  if (payment.archivedAt) throw new AppError('Ce paiement est archivé. Restaurez-le depuis la corbeille avant de le traiter.', 409)
   if (payment.status !== 'DECLARED') throw new AppError('Seuls les paiements déclarés peuvent être traités.', 409)
 
   const transition = reviewPaymentStatus(payment.status as 'PENDING' | 'DECLARED' | 'VERIFIED' | 'REJECTED', payload.action)

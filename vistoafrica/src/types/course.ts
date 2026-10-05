@@ -52,4 +52,7 @@ export type CourseApi = {
   installments: unknown
   image: string | null
   isActive: boolean
+  archivedAt?: string | null
+  registrationCount?: number
+  _count?: { registrations: number }
 }

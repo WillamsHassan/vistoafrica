@@ -1,7 +1,9 @@
 import { app } from './app'
 import { env } from './config/env'
 import { prisma } from './config/prisma'
+import { scheduleAnalyticsPurge } from './services/analyticsService'
 
+scheduleAnalyticsPurge()
 const server = app.listen(env.port, () => {
   console.log(JSON.stringify({ event: 'server_started', port: env.port, environment: env.nodeEnv }))
 })

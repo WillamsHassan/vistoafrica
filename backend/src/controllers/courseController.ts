@@ -11,14 +11,18 @@ const getId = (req: Request) => (Array.isArray(req.params.id) ? req.params.id[0]
 const decimal = (value: number | null | undefined) => value === null || value === undefined ? null : value
 
 export const getCourses = asyncHandler(async (req: Request, res: Response) => {
-  const courses = await prisma.course.findMany({
-    where: req.query.includeInactive === 'true' ? {} : { isActive: true },
-    orderBy: { createdAt: 'asc' },
-  })
+  const includeRegistrationCounts = req.query.includeInactive === 'true'
+  const data = includeRegistrationCounts
+    ? await prisma.course.findMany({ where: {}, orderBy: { createdAt: 'asc' }, include: { _count: { select: { registrations: true } } } }).then((courses) => Promise.all(courses.map(async (course) => ({
+        ...course,
+        registrationCount: course._count.registrations,
+        hasActiveRegistration: Boolean(await prisma.registration.findFirst({ where: { courseId: course.id, status: { notIn: ['CANCELLED', 'REJECTED'] } }, select: { id: true } })),
+      }))))
+    : await prisma.course.findMany({ where: { isActive: true, archivedAt: null }, orderBy: { createdAt: 'asc' } })
 
   res.json({
     success: true,
-    data: courses,
+    data,
   })
 })
 
