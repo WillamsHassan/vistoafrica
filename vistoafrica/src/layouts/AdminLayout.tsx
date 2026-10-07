@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Bell, BriefcaseBusiness, FileText, GraduationCap, LayoutDashboard, Menu, MessageSquareText, Settings, Users, X, LogOut, BarChart3, Trash2 } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useAdminAuth } from '../contexts/AdminAuthContext'
 
@@ -20,9 +20,28 @@ const navItems = [
 ]
 
 const AdminLayout = () => {
-  const { logout, user } = useAdminAuth()
+  const { logout, user, token } = useAdminAuth()
   const navigate = useNavigate()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [unreadMessages, setUnreadMessages] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    const loadUnreadCount = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
+        const response = await fetch(`${apiUrl}/api/admin/messages/unread-count`, { headers: { Authorization: `Bearer ${token}` } })
+        const result = (await response.json()) as { data?: { count: number } }
+        if (active && response.ok && result.data) setUnreadMessages(result.data.count)
+      } catch {
+        // Le compteur reste inchangé en cas d'indisponibilité réseau.
+      }
+    }
+    void loadUnreadCount()
+    window.addEventListener('admin-unread-messages-changed', loadUnreadCount)
+    const interval = window.setInterval(() => void loadUnreadCount(), 15_000)
+    return () => { active = false; window.clearInterval(interval); window.removeEventListener('admin-unread-messages-changed', loadUnreadCount) }
+  }, [token])
 
   const handleLogout = () => {
     logout()
@@ -46,6 +65,7 @@ const AdminLayout = () => {
           <NavLink key={to} to={to} end={to === '/admin'} onClick={() => setIsSidebarOpen(false)} className={({ isActive }) => `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${isActive ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-950/20' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
             <Icon className="h-4 w-4" />
             {label}
+            {to === '/admin/messages' && unreadMessages > 0 && <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[11px] font-bold leading-none text-white" aria-label={`${unreadMessages} message${unreadMessages === 1 ? '' : 's'} non lu${unreadMessages === 1 ? '' : 's'}`}>{unreadMessages > 99 ? '99+' : unreadMessages}</span>}
           </NavLink>
         ))}
         <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-red-950/60 hover:text-red-200">

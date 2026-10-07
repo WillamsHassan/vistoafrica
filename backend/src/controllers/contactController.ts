@@ -27,6 +27,11 @@ export const getContactMessages = asyncHandler(async (_req: Request, res: Respon
   res.json({ success: true, data: messages })
 })
 
+export const getUnreadContactMessageCount = asyncHandler(async (_req: Request, res: Response) => {
+  const count = await prisma.contactMessage.count({ where: { isRead: false, isArchived: false } })
+  res.json({ success: true, data: { count } })
+})
+
 export const updateContactMessage = asyncHandler(async (req: Request, res: Response) => {
   const payload = z.object({ isRead: z.boolean().optional(), isArchived: z.boolean().optional() }).refine((value) => value.isRead !== undefined || value.isArchived !== undefined).parse(req.body)
   const existing = await prisma.contactMessage.findUnique({ where: { id: getId(req) } })

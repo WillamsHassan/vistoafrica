@@ -97,6 +97,7 @@ export const getAdminDashboard = asyncHandler(async (_req: Request, res: Respons
     paymentAlerts,
     monthlyRegistrations,
     monthlyPayments,
+    unreadMessages,
   ] = await Promise.all([
     prisma.student.count({ where: { deletedAt: null } }),
     prisma.registration.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
@@ -130,6 +131,7 @@ export const getAdminDashboard = asyncHandler(async (_req: Request, res: Respons
       where: { createdAt: { gte: sixMonthsAgo }, status: 'VERIFIED', archivedAt: null },
       select: { createdAt: true, amount: true },
     }),
+    prisma.contactMessage.count({ where: { isRead: false, isArchived: false } }),
   ])
 
   const months = Array.from({ length: 6 }, (_, index) => {
@@ -157,6 +159,7 @@ export const getAdminDashboard = asyncHandler(async (_req: Request, res: Respons
         confirmedPayments,
         confirmedRegistrations,
         revenue: Number(revenue._sum.amount ?? 0),
+        unreadMessages,
       },
       statistics,
       recentRegistrations,

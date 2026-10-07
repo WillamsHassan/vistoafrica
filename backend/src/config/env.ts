@@ -1,11 +1,11 @@
 import dotenv from 'dotenv'
+import { resolve } from 'node:path'
 
-dotenv.config()
+dotenv.config({ path: resolve(__dirname, '../../.env') })
 
 const nodeEnv = process.env.NODE_ENV ?? 'development'
 const jwtSecret = process.env.JWT_SECRET ?? ''
 const mongoUri = process.env.MONGODB_URI ?? ''
-const postgresqlSourceUrl = process.env.POSTGRESQL_SOURCE_URL ?? process.env.DATABASE_URL ?? ''
 
 if (!['development', 'test', 'production'].includes(nodeEnv)) {
   throw new Error('NODE_ENV doit être development, test ou production.')
@@ -42,10 +42,10 @@ export const env = {
   // Base de données
   mongoUri: mongoUri || 'mongodb://127.0.0.1:27017/vistoafrica',
   databaseUrl: mongoUri || 'mongodb://127.0.0.1:27017/vistoafrica',
-  postgresqlSourceUrl: postgresqlSourceUrl || 'postgresql://postgres:postgres@localhost:5432/vistoafrica?schema=public',
+  postgresqlSourceUrl: process.env.POSTGRESQL_SOURCE_URL ?? process.env.DATABASE_URL ?? '',
 
   // JWT
-  jwtSecret: jwtSecret || 'local-development-only-secret-change-me',
+  jwtSecret,
 
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '8h',
 
@@ -53,16 +53,16 @@ export const env = {
   bcryptRounds: Number(process.env.BCRYPT_ROUNDS ?? 12),
 
   // Administrateur
-  superAdminEmail: process.env.SUPER_ADMIN_EMAIL ?? 'adminvistoafrica@gmail.com',
-  superAdminPassword: process.env.SUPER_ADMIN_PASSWORD ?? 'ChangeThisPassword123!',
+  superAdminEmail: process.env.SUPER_ADMIN_EMAIL ?? '',
+  superAdminPassword: process.env.SUPER_ADMIN_PASSWORD ?? '',
 
   // ================================
   // EMAIL - NODEMAILER + GMAIL
   // ================================
 
-  emailUser: process.env.EMAIL_USER ?? 'adminvistoafrica@gmail.com',
-  emailFrom: process.env.EMAIL_FROM ?? 'VISTOAFRIKA <adminvistoafrica@gmail.com>',
-  emailTo: process.env.EMAIL_TO ?? 'adminvistoafrica@gmail.com',
+  emailUser: process.env.EMAIL_USER ?? '',
+  emailFrom: process.env.EMAIL_FROM ?? '',
+  emailTo: process.env.EMAIL_TO ?? '',
   emailAppPassword: process.env.EMAIL_APP_PASSWORD ?? '',
 
   // Environnement

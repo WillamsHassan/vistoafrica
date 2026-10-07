@@ -1,0 +1,8 @@
+# Dependencies and transient npm logs
+/node_modules/
+/debug.log
+
+# Local environment files (keep templates only)
+**/.env
+**/.env.*
+!**/.env.example

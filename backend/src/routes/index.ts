@@ -6,7 +6,7 @@ import { createCourse, getCourses, setCourseActive, updateCourse } from '../cont
 import { createPayment, getAdminPayments, reviewPayment } from '../controllers/paymentController'
 import { downloadInvoicePdf, getAdminInvoices } from '../controllers/invoiceController'
 import { createRegistration } from '../controllers/registrationController'
-import { createContactMessage, deleteContactMessage, getContactMessages, updateContactMessage } from '../controllers/contactController'
+import { createContactMessage, deleteContactMessage, getContactMessages, getUnreadContactMessageCount, updateContactMessage } from '../controllers/contactController'
 import { getSettings, updateSettings } from '../controllers/settingsController'
 import { changeAdminRegistrationStatus, downloadAdminRegistrationPdf, getAdminRegistrationById, getAdminRegistrations, updateAdminRegistration } from '../controllers/adminRegistrationController'
 import { downloadStudentInvoice, getStudentById, getStudents, updateStudent } from '../controllers/studentController'
@@ -48,6 +48,7 @@ router.post('/admin/login', adminLogin)
 router.get('/admin/me', protectAdmin, getAdminMe)
 router.get('/admin/dashboard', protectAdmin, getAdminDashboard)
 router.get('/admin/messages', protectAdmin, getContactMessages)
+router.get('/admin/messages/unread-count', protectAdmin, getUnreadContactMessageCount)
 router.patch('/admin/messages/:id', protectAdmin, updateContactMessage)
 router.delete('/admin/messages/:id', protectAdmin, deleteContactMessage)
 router.get('/admin/payments', protectAdmin, getAdminPayments)

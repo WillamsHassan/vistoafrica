@@ -57,9 +57,27 @@ npm run prisma:generate
 
 Prisma lit `MONGODB_URI` depuis `backend/.env`. Le client est régénéré automatiquement avant `npm run build`.
 
-## 5. Migrations
+## 5. Migration de données PostgreSQL vers MongoDB
 
-Le connecteur MongoDB n'utilise pas les migrations SQL Prisma. Après une modification validée du schéma, synchronisez explicitement la base cible :
+Le transfert historique découvre les tables et métadonnées PostgreSQL présentes en direct et les copie dans des collections miroir MongoDB dédiées (`pgmirror_<empreinte>`). Chaque document conserve la ligne source complète, sa clé primaire source, et la cible conserve un instantané des colonnes, contraintes, index et séquences. Les clés étrangères restent représentées telles quelles dans la ligne source. Cette copie miroir ne constitue pas à elle seule une conversion des documents vers les collections Prisma utilisées par l'API : prévoir et valider ce mapping fonctionnel avant de basculer le trafic.
+
+Configurez `POSTGRESQL_SOURCE_URL` et `MONGODB_URI` localement (ou utilisez `DATABASE_URL` comme fallback PostgreSQL). Vérifiez les connexions avant la copie :
+
+```sh
+cd backend
+npm run test:database-connections
+```
+
+Le diagnostic ne révèle pas les URI. MongoDB est testé avec une écriture temporaire et une suppression de cette sonde; les données métier ne sont pas modifiées. Ensuite, la migration lit PostgreSQL dans une transaction `READ ONLY`, copie de manière idempotente et compare chaque ligne à sa source :
+
+```sh
+npm run migrate:postgres-to-mongodb
+npm run verify:postgres-to-mongodb
+```
+
+La migration échoue si les lignes ou le catalogue diffèrent. Elle ne supprime aucune ligne dans PostgreSQL ni dans MongoDB. Les collections miroir peuvent contenir des informations personnelles et des hashes sensibles : limitez les accès MongoDB et protégez les sauvegardes comme la base source. Faites d'abord une exécution sur des copies de sauvegarde et gardez les écritures applicatives arrêtées ou synchronisées pendant la copie afin d'éviter les changements concurrents.
+
+Le connecteur MongoDB n'utilise pas les migrations SQL Prisma. Après une modification validée du schéma applicatif, synchronisez explicitement la base cible :
 
 ```powershell
 npm run prisma:generate
@@ -94,7 +112,7 @@ cd backend
 npm run dev
 ```
 
-L'API est disponible sur `http://localhost:5000`. Le health check est `GET /health` et vérifie la connexion PostgreSQL.
+L'API est disponible sur `http://localhost:5000`. Le health check est `GET /health` et vérifie la connexion MongoDB.
 
 ## 9. Build production
 
