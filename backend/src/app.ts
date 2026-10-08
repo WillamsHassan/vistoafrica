@@ -29,7 +29,12 @@ app.get('/health', async (_req, res) => {
     await prisma.visitorSession.count()
     res.json({ success: true, status: 'ok', database: 'ok' })
   } catch (error) {
-    console.error('[Health] Base de données indisponible:', error)
+    const safeCode = typeof error === 'object' && error !== null && 'code' in error
+      ? String(error.code)
+      : typeof error === 'object' && error !== null && 'name' in error
+        ? String(error.name)
+        : 'DATABASE_CONNECTION_ERROR'
+    console.error('[Health] Base de données indisponible', safeCode)
     res.status(503).json({ success: false, status: 'degraded', database: 'unavailable' })
   }
 })

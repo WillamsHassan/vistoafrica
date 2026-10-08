@@ -40,8 +40,6 @@ export const env = {
   analyticsRetentionDays: Math.max(Number(process.env.ANALYTICS_RETENTION_DAYS ?? 90) || 90, 1),
 
   // Base de données
-  mongoUri: mongoUri || 'mongodb://127.0.0.1:27017/vistoafrica',
-  databaseUrl: mongoUri || 'mongodb://127.0.0.1:27017/vistoafrica',
   postgresqlSourceUrl: process.env.POSTGRESQL_SOURCE_URL ?? process.env.DATABASE_URL ?? '',
 
   // JWT

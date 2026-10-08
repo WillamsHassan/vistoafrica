@@ -11,7 +11,7 @@
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "db:test": "tsx src/scripts/test-database-connections.ts",
+    "db:test": "tsx src/scripts/test-mongodb-connection.ts",
     "test:database-connections": "tsx src/scripts/test-database-connections.ts",
     "migrate:postgres-to-mongodb": "tsx src/scripts/migrate-postgres-to-mongodb.ts",
     "verify:postgres-to-mongodb": "tsx src/scripts/verify-postgres-to-mongodb.ts",

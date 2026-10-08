@@ -3,7 +3,8 @@ import { Client as PgClient } from 'pg'
 import { resolve } from 'node:path'
 
 import { getPostgresConnectionInfo, postgresErrorCode, postgresErrorType } from './databaseConnectionInfo'
-import { createMongoClient, safeDatabaseError, sourceTypeParsers } from './postgresMongoMirror'
+import { prisma } from '../config/prisma'
+import { safeDatabaseError, sourceTypeParsers } from './postgresMongoMirror'
 
 dotenv.config({ path: resolve(__dirname, '../../.env') })
 
@@ -85,15 +86,14 @@ const testMongo = async () => {
     return
   }
 
-  const client = createMongoClient(mongoUri)
   try {
-    await client.connect()
-    await client.db().command({ ping: 1 })
+    await prisma.$connect()
+    await prisma.visitorSession.count()
     results.mongodb = 'OK'
   } catch (error) {
     results.mongodbErrorCode = safeDatabaseError(error)
   } finally {
-    await client.close().catch(() => undefined)
+    await prisma.$disconnect().catch(() => undefined)
   }
 }
 
