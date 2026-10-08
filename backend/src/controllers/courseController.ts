@@ -28,6 +28,11 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 
 export const createCourse = asyncHandler(async (req: Request, res: Response) => {
   const payload = validateBody(courseSchema, req.body)
+  const existingCourse = await prisma.course.findUnique({ where: { slug: payload.slug }, select: { id: true } })
+  if (existingCourse) {
+    throw new AppError('Une formation avec ce slug existe déjà. Choisissez un slug différent.', 409)
+  }
+
   const course = await prisma.course.create({ data: { ...payload, duration: payload.duration || null, frequency: payload.frequency || null, sessionDuration: payload.sessionDuration || null, image: payload.image || null, hourlyRate: decimal(payload.hourlyRate), preparationFees: decimal(payload.preparationFees) } })
   res.status(201).json({ success: true, data: course })
 })
