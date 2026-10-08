@@ -16,11 +16,15 @@
     "migrate:postgres-to-mongodb": "tsx src/scripts/migrate-postgres-to-mongodb.ts",
     "verify:postgres-to-mongodb": "tsx src/scripts/verify-postgres-to-mongodb.ts",
     "seed:admin": "tsx src/scripts/seed-admin.ts",
+    "admin:create": "tsx src/scripts/create-admin.ts",
+    "admin:inspect": "tsx src/scripts/inspect-admin.ts",
+    "admin:reset-password": "tsx src/scripts/reset-admin-password.ts",
     "analytics:purge": "tsx src/scripts/purge-analytics.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
@@ -36,6 +40,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.5",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.2",

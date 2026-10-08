@@ -15,9 +15,10 @@ const loginSchema = z.object({
 
 export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
   const payload = validateBody(loginSchema, req.body)
+  const email = payload.email.trim().toLowerCase()
 
-  const admin = await prisma.admin.findUnique({
-    where: { email: payload.email },
+  const admin = await prisma.admin.findFirst({
+    where: { email: { equals: email, mode: 'insensitive' } },
   })
 
   if (!admin) {
