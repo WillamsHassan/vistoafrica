@@ -5,13 +5,14 @@ const { prismaMock } = vi.hoisted(() => ({
     course: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
   },
 }))
 
 vi.mock('../config/prisma', () => ({ prisma: prismaMock }))
 
-import { createCourse } from './courseController'
+import { createCourse, updateCourse } from './courseController'
 
 const createResponse = () => {
   const res = {
@@ -35,6 +36,8 @@ const validCourse = {
   manualIncluded: false,
   installments: [],
 }
+
+const existingCourse = { id: 'existing-course', ...validCourse }
 
 describe('createCourse', () => {
   beforeEach(() => {
@@ -97,5 +100,27 @@ describe('createCourse', () => {
     })
     expect(next.mock.calls[0][0].message).toContain('slug')
     expect(next.mock.calls[0][0].message).toContain('price')
+  })
+
+  it('returns a conflict when updating a course with a slug that already exists', async () => {
+    prismaMock.course.findUnique
+      .mockResolvedValueOnce(existingCourse)
+      .mockResolvedValueOnce({ id: 'other-course' })
+
+    const req = {
+      params: { id: 'existing-course' },
+      body: { ...validCourse, slug: 'italien-en-ligne' },
+    } as never
+    const res = createResponse()
+    const next = vi.fn()
+
+    updateCourse(req, res as never, next)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(next).toHaveBeenCalledOnce()
+    expect(next.mock.calls[0][0]).toMatchObject({
+      statusCode: 409,
+      message: 'Une formation avec ce slug existe déjà. Choisissez un slug différent.',
+    })
   })
 })

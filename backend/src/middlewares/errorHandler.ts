@@ -10,10 +10,17 @@ export const errorHandler = (
   _next: NextFunction,
 ) => {
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-    const target = Array.isArray(error.meta?.target) ? error.meta.target.map(String) : []
+    const rawTarget = error.meta?.target
+    const target = Array.isArray(rawTarget)
+      ? rawTarget.map(String)
+      : typeof rawTarget === 'string'
+        ? [rawTarget]
+        : []
     const message = target.includes('slug')
       ? 'Une formation avec ce slug existe déjà. Choisissez un slug différent.'
-      : 'Une valeur identique existe déjà pour un champ qui doit être unique.'
+      : target.length
+        ? `Une valeur existe déjà pour le champ unique « ${target.join(', ')} ».`
+        : 'Une valeur identique existe déjà pour un champ qui doit être unique.'
 
     res.status(409).json({ success: false, message })
     return

@@ -128,6 +128,13 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
   }>
   const existing = await prisma.course.findUnique({ where: { id: getId(req) } })
   if (!existing) throw new AppError('Formation introuvable.', 404)
+  if (payload.slug && payload.slug !== existing.slug) {
+    const slugConflict = await prisma.course.findUnique({ where: { slug: payload.slug }, select: { id: true } })
+    if (slugConflict) {
+      throw new AppError('Une formation avec ce slug existe déjà. Choisissez un slug différent.', 409)
+    }
+  }
+
   const course = await prisma.course.update({
     where: { id: existing.id },
     data: {
