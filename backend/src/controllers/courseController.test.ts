@@ -74,4 +74,28 @@ describe('createCourse', () => {
       message: 'Une formation avec ce slug existe déjà. Choisissez un slug différent.',
     })
   })
+
+  it('surfaces the exact rejected field instead of the generic validation message', async () => {
+    prismaMock.course.findUnique.mockResolvedValue(null)
+    const req = {
+      body: {
+        ...validCourse,
+        slug: '!!!',
+        price: '',
+      },
+    } as never
+    const res = createResponse()
+    const next = vi.fn()
+
+    createCourse(req, res as never, next)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(prismaMock.course.create).not.toHaveBeenCalled()
+    expect(next).toHaveBeenCalledOnce()
+    expect(next.mock.calls[0][0]).toMatchObject({
+      statusCode: 400,
+    })
+    expect(next.mock.calls[0][0].message).toContain('slug')
+    expect(next.mock.calls[0][0].message).toContain('price')
+  })
 })

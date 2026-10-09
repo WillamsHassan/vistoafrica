@@ -9,6 +9,13 @@ const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
 type FormState = Omit<CourseApi, 'id' | 'isActive' | 'installments'> & { installments: string }
 const emptyForm: FormState = { name: '', slug: '', category: '', type: '', description: '', duration: '', frequency: '', sessionDuration: '', price: '', registrationFee: '', hourlyRate: '', examIncluded: false, manualIncluded: false, preparationFees: '', installments: '', image: '' }
 const amount = (value: string | number | null) => value === null ? '' : String(value)
+const normalizeSlug = (value: string) => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+const formatValidationError = (payload?: { message?: string; details?: { fieldErrors?: Record<string, string[]>; formErrors?: string[] } }) => {
+  const fieldErrors = Object.entries(payload?.details?.fieldErrors ?? {}).flatMap(([field, errors]) => (errors ?? []).map((error) => `${field}: ${error}`))
+  const formErrors = payload?.details?.formErrors ?? []
+  const merged = [...fieldErrors, ...formErrors]
+  return merged.length ? merged.join(' • ') : payload?.message ?? 'Impossible d’enregistrer la formation.'
+}
 const toForm = (course: CourseApi): FormState => ({ ...course, price: amount(course.price), registrationFee: amount(course.registrationFee), hourlyRate: amount(course.hourlyRate), preparationFees: amount(course.preparationFees), image: course.image ?? '', duration: course.duration ?? '', frequency: course.frequency ?? '', sessionDuration: course.sessionDuration ?? '', installments: Array.isArray(course.installments) ? course.installments.join('\n') : '' })
 
 const AdminFormationsPage = () => {
@@ -40,11 +47,25 @@ const AdminFormationsPage = () => {
     setError('')
     setSaving(true)
     try {
-      const payload = { ...form, price: Number(form.price), registrationFee: Number(form.registrationFee), hourlyRate: form.hourlyRate ? Number(form.hourlyRate) : null, preparationFees: form.preparationFees ? Number(form.preparationFees) : null, installments: form.installments.split('\n').map((item) => item.trim()).filter(Boolean), image: form.image || null }
+      const nextSlug = normalizeSlug(form.slug)
+      if (!nextSlug) {
+        throw new Error('Le slug est obligatoire et ne peut pas être vide.')
+      }
+
+      const payload = {
+        ...form,
+        slug: nextSlug,
+        price: Number(form.price),
+        registrationFee: Number(form.registrationFee),
+        hourlyRate: form.hourlyRate === '' || form.hourlyRate == null ? null : Number(form.hourlyRate),
+        preparationFees: form.preparationFees === '' || form.preparationFees == null ? null : Number(form.preparationFees),
+        installments: form.installments.split('\n').map((item) => item.trim()).filter(Boolean),
+        image: form.image && form.image.trim() ? form.image.trim() : null,
+      }
       const response = await fetch(`${apiUrl}/api/admin/courses${editingId ? `/${editingId}` : ''}`, { method: editingId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) })
-      const result = (await response.json().catch(() => ({}))) as { message?: string }
-      if (!response.ok) throw new Error(result.message ?? 'Impossible d’enregistrer la formation.')
-      setShowForm(false); setEditingId(null); setForm(emptyForm); await loadCourses()
+      const result = (await response.json().catch(() => ({}))) as { message?: string; details?: { fieldErrors?: Record<string, string[]>; formErrors?: string[] } }
+      if (!response.ok) throw new Error(formatValidationError(result))
+      setShowForm(false); setEditingId(null); setForm(emptyForm); setNotice(editingId ? 'Formation mise à jour avec succès.' : 'Formation créée avec succès.'); await loadCourses()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Impossible de contacter le serveur. Vérifiez la connexion puis réessayez.')
     } finally {

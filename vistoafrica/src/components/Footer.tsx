@@ -5,6 +5,10 @@ import { useSiteSettings } from '../hooks/useSiteSettings'
 
 const Footer = () => {
   const settings = useSiteSettings()
+  const contactPhone = settings.contact_phone || '+237 6xx xx xx xx'
+  const contactEmail = settings.contact_email || 'contact@vistoafrica.com'
+  const contactAddress = settings.contact_address || 'Douala, Cameroun'
+
   return (
     <footer className="bg-brand-dark text-slate-200">
       <div className="section-shell grid gap-10 py-14 lg:grid-cols-4">
@@ -30,9 +34,9 @@ const Footer = () => {
         <div>
           <h3 className="text-lg font-semibold text-white">Contact</h3>
           <ul className="mt-4 space-y-3 text-sm text-slate-300">
-            <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-brand-green" /> {settings.contact_phone ?? '...'}</li>
-            <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-brand-green" /> {settings.contact_email ?? '...'}</li>
-            <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-brand-green" /> {settings.contact_address ?? '...'}</li>
+            <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-brand-green" /> {contactPhone}</li>
+            <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-brand-green" /> {contactEmail}</li>
+            <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-brand-green" /> {contactAddress}</li>
           </ul>
         </div>
 

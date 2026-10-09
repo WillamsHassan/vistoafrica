@@ -6,9 +6,52 @@ import { AppError } from '../utils/appError'
 import { asyncHandler } from '../utils/asyncHandler'
 import { validateBody } from '../utils/validate'
 
-const courseSchema = z.object({ name: z.string().trim().min(2), slug: z.string().trim().min(2).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), category: z.string().trim().min(2), type: z.string().trim().min(2), description: z.string().trim().min(10), price: z.number().nonnegative(), registrationFee: z.number().nonnegative(), duration: z.string().trim().min(1).optional().or(z.literal('')), frequency: z.string().trim().min(1).optional().or(z.literal('')), sessionDuration: z.string().trim().min(1).optional().or(z.literal('')), hourlyRate: z.number().nonnegative().nullable().optional(), examIncluded: z.boolean().default(false), manualIncluded: z.boolean().default(false), preparationFees: z.number().nonnegative().nullable().optional(), installments: z.array(z.string().trim().min(1)).default([]), image: z.string().url().nullable().optional().or(z.literal('')) })
+const requiredNumber = z.preprocess((value) => {
+  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return undefined
+  return value
+}, z.union([
+  z.number().nonnegative(),
+  z.string().trim().regex(/^\d+(?:\.\d+)?$/).transform((entry) => Number(entry)),
+]))
+
+const nullableNumber = z.preprocess((value) => {
+  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return null
+  return value
+}, z.union([
+  z.number().nonnegative(),
+  z.string().trim().regex(/^\d+(?:\.\d+)?$/).transform((entry) => Number(entry)),
+]).nullable())
+
+const optionalText = z.preprocess((value) => {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'string' && value.trim() === '') return ''
+  return value
+}, z.union([z.string().trim().min(1), z.literal('')]).optional().nullable())
+
+const courseSchema = z.object({
+  name: z.string().trim().min(2),
+  slug: z.string().trim().transform((value) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')).pipe(z.string().min(2).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)),
+  category: z.string().trim().min(2),
+  type: z.string().trim().min(2),
+  description: z.string().trim().min(10),
+  price: requiredNumber,
+  registrationFee: requiredNumber,
+  duration: optionalText,
+  frequency: optionalText,
+  sessionDuration: optionalText,
+  hourlyRate: nullableNumber.optional(),
+  examIncluded: z.boolean().default(false),
+  manualIncluded: z.boolean().default(false),
+  preparationFees: nullableNumber.optional(),
+  installments: z.array(z.string().trim().min(1)).default([]),
+  image: z.preprocess((value) => {
+    if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return ''
+    return value
+  }, z.union([z.string().url(), z.literal('')]).nullable().optional()),
+})
 const getId = (req: Request) => (Array.isArray(req.params.id) ? req.params.id[0] : req.params.id)
 const decimal = (value: number | null | undefined) => value === null || value === undefined ? null : value
+const normalizeOptionalString = (value: string | null | undefined) => value === null || value === undefined || value === '' ? null : value
 
 export const getCourses = asyncHandler(async (req: Request, res: Response) => {
   const includeRegistrationCounts = req.query.includeInactive === 'true'
@@ -27,21 +70,76 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const createCourse = asyncHandler(async (req: Request, res: Response) => {
-  const payload = validateBody(courseSchema, req.body)
+  const payload = validateBody(courseSchema, req.body) as {
+    name: string
+    slug: string
+    category: string
+    type: string
+    description: string
+    price: number
+    registrationFee: number
+    duration?: string | null
+    frequency?: string | null
+    sessionDuration?: string | null
+    hourlyRate?: number | null
+    examIncluded: boolean
+    manualIncluded: boolean
+    preparationFees?: number | null
+    installments: string[]
+    image?: string | null
+  }
   const existingCourse = await prisma.course.findUnique({ where: { slug: payload.slug }, select: { id: true } })
   if (existingCourse) {
     throw new AppError('Une formation avec ce slug existe déjà. Choisissez un slug différent.', 409)
   }
 
-  const course = await prisma.course.create({ data: { ...payload, duration: payload.duration || null, frequency: payload.frequency || null, sessionDuration: payload.sessionDuration || null, image: payload.image || null, hourlyRate: decimal(payload.hourlyRate), preparationFees: decimal(payload.preparationFees) } })
+  const course = await prisma.course.create({
+    data: {
+      ...payload,
+      duration: normalizeOptionalString(payload.duration),
+      frequency: normalizeOptionalString(payload.frequency),
+      sessionDuration: normalizeOptionalString(payload.sessionDuration),
+      image: normalizeOptionalString(payload.image),
+      hourlyRate: decimal(payload.hourlyRate),
+      preparationFees: decimal(payload.preparationFees),
+    },
+  })
   res.status(201).json({ success: true, data: course })
 })
 
 export const updateCourse = asyncHandler(async (req: Request, res: Response) => {
-  const payload = validateBody(courseSchema.partial(), req.body)
+  const payload = validateBody(courseSchema.partial(), req.body) as Partial<{
+    name: string
+    slug: string
+    category: string
+    type: string
+    description: string
+    price: number
+    registrationFee: number
+    duration: string | null
+    frequency: string | null
+    sessionDuration: string | null
+    hourlyRate: number | null
+    examIncluded: boolean
+    manualIncluded: boolean
+    preparationFees: number | null
+    installments: string[]
+    image: string | null
+  }>
   const existing = await prisma.course.findUnique({ where: { id: getId(req) } })
   if (!existing) throw new AppError('Formation introuvable.', 404)
-  const course = await prisma.course.update({ where: { id: existing.id }, data: { ...payload, ...(payload.duration !== undefined ? { duration: payload.duration || null } : {}), ...(payload.frequency !== undefined ? { frequency: payload.frequency || null } : {}), ...(payload.sessionDuration !== undefined ? { sessionDuration: payload.sessionDuration || null } : {}), ...(payload.image !== undefined ? { image: payload.image || null } : {}), ...(payload.hourlyRate !== undefined ? { hourlyRate: decimal(payload.hourlyRate) } : {}), ...(payload.preparationFees !== undefined ? { preparationFees: decimal(payload.preparationFees) } : {}) } })
+  const course = await prisma.course.update({
+    where: { id: existing.id },
+    data: {
+      ...payload,
+      ...(payload.duration !== undefined ? { duration: normalizeOptionalString(payload.duration) } : {}),
+      ...(payload.frequency !== undefined ? { frequency: normalizeOptionalString(payload.frequency) } : {}),
+      ...(payload.sessionDuration !== undefined ? { sessionDuration: normalizeOptionalString(payload.sessionDuration) } : {}),
+      ...(payload.image !== undefined ? { image: normalizeOptionalString(payload.image) } : {}),
+      ...(payload.hourlyRate !== undefined ? { hourlyRate: decimal(payload.hourlyRate) } : {}),
+      ...(payload.preparationFees !== undefined ? { preparationFees: decimal(payload.preparationFees) } : {}),
+    },
+  })
   res.json({ success: true, data: course })
 })
 
