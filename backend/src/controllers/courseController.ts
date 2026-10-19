@@ -61,7 +61,14 @@ export const getCourses = asyncHandler(async (req: Request, res: Response) => {
         registrationCount: course._count.registrations,
         hasActiveRegistration: Boolean(await prisma.registration.findFirst({ where: { courseId: course.id, status: { notIn: ['CANCELLED', 'REJECTED'] } }, select: { id: true } })),
       }))))
-    : await prisma.course.findMany({ where: { isActive: true, archivedAt: null }, orderBy: { createdAt: 'asc' } })
+    : await prisma.course.findMany({  where: {
+      isActive: true,
+      OR: [
+        { archivedAt: null },
+        { archivedAt: { isSet: false } },
+      ],
+    },
+    orderBy: { createdAt: 'asc' }, })
 
   res.json({
     success: true,

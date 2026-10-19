@@ -8,7 +8,7 @@ const formatAmount = (value: string | number | null | undefined) => value === nu
 export const mapCourse = (course: CourseApi): Course => {
   const installments = Array.isArray(course.installments) ? course.installments.filter((item): item is string => typeof item === 'string') : []
   return {
-    id: course.slug, slug: course.slug, name: course.name, category: course.category, type: course.type, description: course.description,
+    id: course.id, slug: course.slug, name: course.name, category: course.category, type: course.type, description: course.description,
     duration: course.duration ?? 'Non précisée', frequency: course.frequency ?? 'Non précisée', sessionLength: course.sessionDuration ?? 'Non précisée',
     price: formatAmount(course.price), registrationFee: formatAmount(course.registrationFee), hourlyRate: formatAmount(course.hourlyRate) || undefined,
     exam: course.examIncluded ? 'Examen inclus' : 'Examen non inclus', extra: course.manualIncluded ? 'Manuel inclus' : 'Manuel non inclus', image: course.image ?? '',

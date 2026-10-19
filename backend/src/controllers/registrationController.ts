@@ -21,9 +21,40 @@ const registrationSchema = z.object({
 export const createRegistration = asyncHandler(async (req: Request, res: Response) => {
   const payload = validateBody(registrationSchema, req.body)
 
-  const registration = await prisma.$transaction(async (transaction) => {
-    const course = await transaction.course.findFirst({ where: { isActive: true, archivedAt: null, OR: [{ id: payload.courseId }, { slug: payload.courseId }] } })
-    if (!course) throw new AppError('Formation introuvable.', 404)
+  const registration = await prisma.$transaction(
+  async (transaction) => {
+   
+    const activeCourseFilter = {
+      isActive: true,
+      OR: [
+        { archivedAt: null },
+        { archivedAt: { isSet: false } },
+      ],
+    }
+
+    // Rechercher d'abord par slug, sans tenter de convertir le slug en ObjectId.
+    let course = await transaction.course.findFirst({
+      where: {
+        ...activeCourseFilter,
+        slug: payload.courseId,
+      },
+    })
+
+    // Si aucun slug ne correspond, tenter l'identifiant MongoDB uniquement
+    // lorsque la valeur a le format d'un ObjectId.
+    if (!course && /^[0-9a-fA-F]{24}$/.test(payload.courseId)) {
+      course = await transaction.course.findFirst({
+        where: {
+          ...activeCourseFilter,
+          id: payload.courseId,
+        },
+      })
+    }
+
+    if (!course) {
+      throw new AppError('Formation introuvable ou indisponible.', 404)
+    }
+
 
     const existingStudent = await transaction.student.findUnique({ where: { email: payload.email }, select: { id: true, deletedAt: true } })
     if (existingStudent?.deletedAt) throw new AppError('Ce dossier étudiant est archivé. Contactez l’administration pour le restaurer avant une nouvelle inscription.', 409)
@@ -47,9 +78,14 @@ export const createRegistration = asyncHandler(async (req: Request, res: Respons
         status: 'PAYMENT_PENDING',
         notes: payload.notes ?? null,
       },
-      include: { student: true, course: true },
+            include: { student: true, course: true },
     })
-  })
+  },
+  {
+    maxWait: 10000,
+    timeout: 20000,
+  },
+)
 
   const emailData = { firstName: registration.student.firstName, lastName: registration.student.lastName, email: registration.student.email, phone: registration.student.phone, courseName: registration.course.name, amount: registration.amount.toString(), registrationId: registration.id }
   void emailService.registrationRecorded(emailData)

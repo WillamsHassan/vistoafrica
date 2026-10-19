@@ -76,7 +76,7 @@ model Student {
 
 model Course {
   id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId        String?       @unique
+  legacyId        String?      
   slug            String        @unique
   name            String
   category        String        @default("Général")
