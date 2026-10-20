@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises'
-import nodemailer, { type SendMailOptions } from 'nodemailer'
-
+import { Resend } from 'resend'
 import { env } from '../config/env'
 import { prisma } from '../config/prisma'
 
@@ -31,16 +30,12 @@ type EmailMessage = {
 /**
  * Transporteur Gmail SMTP
  */
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: env.emailUser,
-    pass: env.emailAppPassword,
-  },
-})
+/**
+ * Transporteur Resend via API HTTPS.
+ */
+const resend = env.resendApiKey
+  ? new Resend(env.resendApiKey)
+  : null
 
 const escapeHtml = (value: string) =>
   value
@@ -104,32 +99,65 @@ class EmailService {
   /**
    * Envoi principal
    */
+  
+  /**
+   * Envoi principal via l'API HTTPS Resend.
+   */
   private async send(message: EmailMessage) {
-    const mailOptions: SendMailOptions = {
+    if (!resend) {
+      throw new Error(
+        'Configuration email manquante : définissez RESEND_API_KEY.',
+      )
+    }
+
+    if (!env.emailFrom) {
+      throw new Error(
+        'Configuration email manquante : définissez EMAIL_FROM.',
+      )
+    }
+
+    const { data, error } = await resend.emails.send({
       from: env.emailFrom,
       to: message.to,
       subject: message.subject,
       html: message.html,
 
-      ...(message.attachments
+      ...(message.attachments?.length
         ? {
             attachments: message.attachments.map((attachment) => ({
               filename: attachment.filename,
               content: attachment.content,
-              encoding: attachment.encoding ?? 'base64',
             })),
           }
         : {}),
+    })
+
+    if (error) {
+      console.error('[EmailService] Erreur API Resend :', {
+        name: error.name,
+        message: error.message,
+        statusCode: error.statusCode,
+        recipient: message.to,
+        subject: message.subject,
+      })
+
+      throw new Error(`Resend : ${error.message}`)
     }
 
-    const info = await transporter.sendMail(mailOptions)
+    if (!data?.id) {
+      throw new Error(
+        'Resend n’a retourné aucun identifiant pour cet envoi.',
+      )
+    }
 
     console.info(
-      `[EmailService] Email envoyé: ${info.messageId} -> ${message.to}`,
+      `[EmailService] Demande acceptée par Resend : ${data.id} -> ${message.to}`,
     )
 
-    return info
+    return data
   }
+
+    
 
   /**
    * Envoi sécurisé :

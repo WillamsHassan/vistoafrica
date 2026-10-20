@@ -26,6 +26,7 @@ import PaymentPage from '../pages/PaymentPage'
 import RegistrationPage from '../pages/RegistrationPage'
 import RegistrationSuccessPage from '../pages/RegistrationSuccessPage'
 import RegistrationSummaryPage from '../pages/RegistrationSummaryPage'
+import FormationsPage from '../pages/FormationsPage'
 import VisaPage from '../pages/VisaPage'
 
 const AppRoutes = () => {
@@ -34,6 +35,7 @@ const AppRoutes = () => {
       <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/formations" element={<FormationsPage />} />
         <Route path="/cours-italien" element={<CoursItalienPage />} />
         <Route path="/cours-anglais" element={<CoursAnglaisPage />} />
         <Route path="/visa" element={<VisaPage />} />

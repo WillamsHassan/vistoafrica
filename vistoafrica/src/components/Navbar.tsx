@@ -40,7 +40,7 @@ const Navbar = () => {
         </nav>
 
         <div className="flex items-center gap-3">
-          <NavLink to="/inscription" className="btn-primary hidden sm:inline-flex">
+          <NavLink to="/formations" className="btn-primary hidden sm:inline-flex">
             S’inscrire
           </NavLink>
           <button
@@ -71,7 +71,7 @@ const Navbar = () => {
                 {label}
               </NavLink>
             ))}
-            <NavLink to="/inscription" onClick={() => setIsMenuOpen(false)} className="btn-primary mt-2 justify-center sm:hidden">
+            <NavLink to="/formations" onClick={() => setIsMenuOpen(false)} className="btn-primary mt-2 justify-center sm:hidden">
               S’inscrire
             </NavLink>
           </div>
