@@ -85,55 +85,134 @@ export const getAdminDashboard = asyncHandler(async (_req: Request, res: Respons
   thirtyDaysAgo.setDate(now.getDate() - 30)
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
 
+  
+  const activePaymentFilter = {
+    OR: [
+      { archivedAt: null },
+      { archivedAt: { isSet: false } },
+    ],
+  }
+
+
   const [
-    totalStudents,
-    newRegistrations,
-    pendingPayments,
-    paymentsToVerify,
-    confirmedPayments,
-    confirmedRegistrations,
-    revenue,
-    recentRegistrations,
-    recentPayments,
-    paymentAlerts,
-    monthlyRegistrations,
-    monthlyPayments,
-    unreadMessages,
-  ] = await Promise.all([
-    prisma.student.count({ where: { deletedAt: null } }),
-    prisma.registration.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-    prisma.payment.count({ where: { status: 'PENDING', archivedAt: null } }),
-    prisma.payment.count({ where: { status: 'DECLARED', archivedAt: null } }),
-    prisma.payment.count({ where: { status: 'VERIFIED', archivedAt: null } }),
-    prisma.registration.count({ where: { status: 'CONFIRMED' } }),
-    prisma.payment.aggregate({ _sum: { amount: true }, where: { status: 'VERIFIED', archivedAt: null } }),
-    prisma.registration.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: { student: true, course: true },
-    }),
-    prisma.payment.findMany({
-      take: 5,
-      where: { archivedAt: null },
-      orderBy: { createdAt: 'desc' },
-      include: { registration: { include: { student: true } } },
-    }),
-    prisma.payment.findMany({
-      take: 5,
-      where: { status: 'DECLARED', archivedAt: null },
-      orderBy: { declaredAt: 'asc' },
-      include: { registration: { include: { student: true } } },
-    }),
-    prisma.registration.findMany({
-      where: { createdAt: { gte: sixMonthsAgo } },
-      select: { createdAt: true },
-    }),
-    prisma.payment.findMany({
-      where: { createdAt: { gte: sixMonthsAgo }, status: 'VERIFIED', archivedAt: null },
-      select: { createdAt: true, amount: true },
-    }),
-    prisma.contactMessage.count({ where: { isRead: false, isArchived: false } }),
-  ])
+      totalStudents,
+      newRegistrations,
+      pendingPayments,
+      paymentsToVerify,
+      confirmedPayments,
+      confirmedRegistrations,
+      revenue,
+      recentRegistrations,
+      recentPayments,
+      paymentAlerts,
+      monthlyRegistrations,
+      monthlyPayments,
+      unreadMessages,
+    ] = await Promise.all([
+      prisma.student.count({
+  where: {
+    OR: [
+      { deletedAt: null },
+      { deletedAt: { isSet: false } },
+    ],
+  },
+}),
+
+      prisma.registration.count({
+        where: { createdAt: { gte: thirtyDaysAgo } },
+      }),
+
+      prisma.payment.count({
+        where: {
+          status: 'PENDING',
+          ...activePaymentFilter,
+        },
+      }),
+
+      prisma.payment.count({
+        where: {
+          status: 'DECLARED',
+          ...activePaymentFilter,
+        },
+      }),
+
+      prisma.payment.count({
+        where: {
+          status: 'VERIFIED',
+          ...activePaymentFilter,
+        },
+      }),
+
+      prisma.registration.count({
+        where: { status: 'CONFIRMED' },
+      }),
+
+      prisma.payment.aggregate({
+        _sum: { amount: true },
+        where: {
+          status: 'VERIFIED',
+          ...activePaymentFilter,
+        },
+      }),
+
+      prisma.registration.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          student: true,
+          course: true,
+        },
+      }),
+
+      prisma.payment.findMany({
+        take: 5,
+        where: activePaymentFilter,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          registration: {
+            include: { student: true },
+          },
+        },
+      }),
+
+      prisma.payment.findMany({
+        take: 5,
+        where: {
+          status: 'DECLARED',
+          ...activePaymentFilter,
+        },
+        orderBy: { declaredAt: 'asc' },
+        include: {
+          registration: {
+            include: { student: true },
+          },
+        },
+      }),
+
+      prisma.registration.findMany({
+        where: { createdAt: { gte: sixMonthsAgo } },
+        select: { createdAt: true },
+      }),
+
+      prisma.payment.findMany({
+        where: {
+          createdAt: { gte: sixMonthsAgo },
+          status: 'VERIFIED',
+          ...activePaymentFilter,
+        },
+        select: {
+          createdAt: true,
+          amount: true,
+        },
+      }),
+
+      prisma.contactMessage.count({
+        where: {
+          isRead: false,
+          isArchived: false,
+        },
+      }),
+    ])
 
   const months = Array.from({ length: 6 }, (_, index) => {
     const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1)

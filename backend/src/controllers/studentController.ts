@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 
+import { Prisma } from '@prisma/client'
 import { prisma } from '../config/prisma'
 import { AppError } from '../utils/appError'
 import { asyncHandler } from '../utils/asyncHandler'
@@ -25,29 +26,45 @@ export const getStudents = asyncHandler(async (req: Request, res: Response) => {
   const courseId = typeof req.query.courseId === 'string' ? req.query.courseId : ''
   const status = typeof req.query.status === 'string' ? req.query.status : ''
 
-  const where = {
-    deletedAt: null,
-    ...(search
-      ? {
-          OR: [
-            { firstName: { contains: search, mode: 'insensitive' as const } },
-            { lastName: { contains: search, mode: 'insensitive' as const } },
-            { email: { contains: search, mode: 'insensitive' as const } },
-            { phone: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
-      : {}),
-    ...(city ? { city: { contains: city, mode: 'insensitive' as const } } : {}),
-    ...(courseId || status
-      ? {
-          registrations: {
-            some: {
-              ...(courseId ? { courseId } : {}),
-              ...(status ? { status: status as never } : {}),
-            },
-          },
-        }
-      : {}),
+  const conditions: Prisma.StudentWhereInput[] = [
+    {
+      OR: [
+        { deletedAt: null },
+        { deletedAt: { isSet: false } },
+      ],
+    },
+  ]
+
+  if (search) {
+    conditions.push({
+      OR: [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+      ],
+    })
+  }
+
+  if (city) {
+    conditions.push({
+      city: { contains: city, mode: 'insensitive' },
+    })
+  }
+
+  if (courseId || status) {
+    conditions.push({
+      registrations: {
+        some: {
+          ...(courseId ? { courseId } : {}),
+          ...(status ? { status: status as never } : {}),
+        },
+      },
+    })
+  }
+
+  const where: Prisma.StudentWhereInput = {
+    AND: conditions,
   }
 
   const [students, total] = await Promise.all([
@@ -71,7 +88,12 @@ export const getStudents = asyncHandler(async (req: Request, res: Response) => {
     success: true,
     data: {
       items: students,
-      pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
     },
   })
 })

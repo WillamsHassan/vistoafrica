@@ -88,8 +88,20 @@ export const createRegistration = asyncHandler(async (req: Request, res: Respons
 )
 
   const emailData = { firstName: registration.student.firstName, lastName: registration.student.lastName, email: registration.student.email, phone: registration.student.phone, courseName: registration.course.name, amount: registration.amount.toString(), registrationId: registration.id }
-  void emailService.registrationRecorded(emailData)
-  void emailService.paymentInstructions(emailData)
+  
+  void Promise.allSettled([
+    emailService.registrationRecorded(emailData),
+    emailService.paymentInstructions(emailData),
+    ]).then((results) => {
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(
+          `[Registration] Échec de l'e-mail ${index + 1} :`,
+         result.reason,
+        )
+      }
+    })
+  })
 
   res.status(201).json({
     success: true,

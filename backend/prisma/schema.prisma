@@ -59,7 +59,7 @@ model Admin {
 
 model Student {
   id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId      String?       @unique
+  legacyId      String?       
   firstName     String
   lastName      String
   email         String        @unique
@@ -104,7 +104,7 @@ model Course {
 
 model Registration {
   id             String            @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId       String?           @unique
+  legacyId       String?           
   legacyStudentId String?
   legacyCourseId  String?
   accessToken    String?           @unique
@@ -123,7 +123,7 @@ model Registration {
 
 model Payment {
   id                String        @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId          String?       @unique
+  legacyId          String?       
   legacyRegistrationId String?
   legacyAdminId     String?
   registrationId    String        @db.ObjectId
@@ -149,7 +149,7 @@ model Payment {
 
 model PaymentAction {
   id        String            @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId  String?           @unique
+  legacyId  String?           
   paymentId String            @db.ObjectId
   adminId   String            @db.ObjectId
   action    PaymentActionType
@@ -164,7 +164,7 @@ model PaymentAction {
 
 model Invoice {
   id                 String      @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId           String?     @unique
+  legacyId           String?     
   legacyRegistrationId String?
   legacyPaymentId     String?
   registrationId     String      @db.ObjectId @unique
@@ -183,7 +183,7 @@ model Invoice {
 
 model ContactMessage {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId  String?  @unique
+  legacyId  String?  
   name      String
   email     String
   phone     String
@@ -196,7 +196,7 @@ model ContactMessage {
 
 model SiteSetting {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId    String?  @unique
+  legacyId    String?  
   key         String   @unique
   value       String
   description String?
@@ -206,7 +206,7 @@ model SiteSetting {
 
 model VisitorSession {
   id              String           @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId        String?          @unique
+  legacyId        String?          
   visitorId       String           @unique
   firstSeenAt     DateTime         @default(now())
   lastSeenAt      DateTime         @default(now())
@@ -234,7 +234,7 @@ model VisitorSession {
 
 model PageView {
   id               String         @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId         String?        @unique
+  legacyId         String?        
   visitorSessionId String         @db.ObjectId
   path             String
   title            String?
@@ -248,7 +248,7 @@ model PageView {
 
 model AnalyticsEvent {
   id               String            @id @default(auto()) @map("_id") @db.ObjectId
-  legacyId         String?           @unique
+  legacyId         String?           
   visitorSessionId String            @db.ObjectId
   type             AnalyticsEventType
   path             String
